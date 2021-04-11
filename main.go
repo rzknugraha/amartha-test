@@ -43,16 +43,19 @@ import (
 
 var validate *validator.Validate
 
+//ShortenParam param for shor
 type ShortenParam struct {
 	URL       string `json:"url" validate:"required"`
 	Shortcode string `json:"shortcode" validate:"omitempty,alphanum,len=6"`
 }
 
+//ShortenResp resp shorten
 type ShortenResp struct {
 	Shortcode string `json:"shortcode"`
 	Message   string `json:"message"`
 }
 
+//DataURL struct for template data
 type DataURL struct {
 	Shortcode    string
 	URL          string
@@ -60,12 +63,15 @@ type DataURL struct {
 	LastSeenDate string
 	Count        int
 }
+
+//StatsResp for resp stats
 type StatsResp struct {
 	StartDate     string `json:"startDate" `
 	LastSeenDate  string `json:"lastSeenDate"`
 	RedirectCount int    `json:"redirectCount"`
 }
 
+//DataByShorten decalere mapping for temp data
 var DataByShorten map[string][]*DataURL
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
@@ -119,20 +125,19 @@ func short(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		fmt.Println(err)
+
 		Response(w, http.StatusInternalServerError, &ShortenResp{
 			Message: "Error Decode",
 		})
 		return
 	}
-	fmt.Println(p)
 
 	err = validate.Struct(p)
 	if err != nil {
 		errs := err.(validator.ValidationErrors)
 
 		for _, e := range errs {
-			fmt.Println(e)
+
 			if e.StructField() == "Shortcode" {
 				Response(w, http.StatusUnprocessableEntity, &ShortenResp{
 					Message: "Error validation shortcode",
@@ -151,8 +156,7 @@ func short(w http.ResponseWriter, r *http.Request) {
 	} else {
 		shorten = p.Shortcode
 	}
-	fmt.Println("shorten")
-	fmt.Println(shorten)
+
 	getData, _ := getDataByShorten(shorten)
 
 	if getData {
@@ -163,8 +167,7 @@ func short(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-	fmt.Println("p.Shortcode")
-	fmt.Println(p.Shortcode)
+
 	dTemp.Shortcode = shorten
 	dTemp.URL = p.URL
 	dTemp.CreatedAt = time.Now().Format("2006-01-02T15:04:05+00:00")
@@ -190,8 +193,7 @@ func getShort(w http.ResponseWriter, r *http.Request) {
 	}
 
 	checkShorten, data := getDataByShorten(shorten)
-	fmt.Println("checkShorten")
-	fmt.Println(checkShorten)
+
 	if checkShorten {
 
 		update(data)
@@ -237,8 +239,7 @@ func update(v DataURL) {
 
 	v.Count = v.Count + 1
 	v.LastSeenDate = time.Now().Format(time.RFC3339)
-	fmt.Println("updqte")
-	fmt.Println(v)
+
 	if len(DataByShorten[v.Shortcode]) > 0 {
 
 		for _, val := range DataByShorten[v.Shortcode] {
@@ -253,8 +254,7 @@ func getDataByShorten(s string) (state bool, data DataURL) {
 	if len(DataByShorten[s]) > 0 {
 
 		for _, val := range DataByShorten[s] {
-			fmt.Println("val")
-			fmt.Println(val)
+
 			data = DataURL{
 				Shortcode:    val.Shortcode,
 				URL:          val.URL,
