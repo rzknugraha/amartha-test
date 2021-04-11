@@ -60,6 +60,11 @@ type DataURL struct {
 	LastSeenDate string
 	Count        int
 }
+type StatsResp struct {
+	StartDate     string `json:"startDate" `
+	LastSeenDate  string `json:"lastSeenDate"`
+	RedirectCount int    `json:"redirectCount"`
+}
 
 var DataByShorten map[string][]*DataURL
 
@@ -79,6 +84,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/shorten", short).Methods("POST")
 	r.HandleFunc("/shortcode/{shorten}", getShort).Methods("GET")
+	r.HandleFunc("/shortcode/stats/{shorten}", stats).Methods("GET")
 
 	validate = validator.New()
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -194,8 +200,39 @@ func getShort(w http.ResponseWriter, r *http.Request) {
 	return
 
 }
+func stats(w http.ResponseWriter, r *http.Request) {
+	shorten := mux.Vars(r)["shorten"]
+
+	if shorten == "" {
+		Response(w, http.StatusNotFound, &ShortenResp{
+			Message: "Not Found",
+		})
+		return
+	}
+
+	checkShorten, data := getDataByShorten(shorten)
+
+	if checkShorten {
+		resp := StatsResp{
+			StartDate:     data.CreatedAt,
+			LastSeenDate:  data.LastSeenDate,
+			RedirectCount: data.Count,
+		}
+		Response(w, http.StatusOK, resp)
+		return
+	}
+	Response(w, http.StatusNotFound, &ShortenResp{})
+	return
+
+}
 
 func store(v DataURL) {
+	fmt.Println(v.Shortcode)
+	fmt.Println("v.Shortcode")
+	fmt.Println(v)
+	DataByShorten[v.Shortcode] = append(DataByShorten[v.Shortcode], &v)
+}
+func update(v DataURL, s string) {
 	fmt.Println(v.Shortcode)
 	fmt.Println("v.Shortcode")
 	fmt.Println(v)
