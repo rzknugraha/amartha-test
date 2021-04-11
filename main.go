@@ -193,6 +193,9 @@ func getShort(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("checkShorten")
 	fmt.Println(checkShorten)
 	if checkShorten {
+
+		update(data)
+
 		http.Redirect(w, r, data.URL, http.StatusFound)
 		return
 	}
@@ -227,23 +230,26 @@ func stats(w http.ResponseWriter, r *http.Request) {
 }
 
 func store(v DataURL) {
-	fmt.Println(v.Shortcode)
-	fmt.Println("v.Shortcode")
-	fmt.Println(v)
+
 	DataByShorten[v.Shortcode] = append(DataByShorten[v.Shortcode], &v)
 }
-func update(v DataURL, s string) {
-	fmt.Println(v.Shortcode)
-	fmt.Println("v.Shortcode")
+func update(v DataURL) {
+
+	v.Count = v.Count + 1
+	v.LastSeenDate = time.Now().Format(time.RFC3339)
+	fmt.Println("updqte")
 	fmt.Println(v)
-	DataByShorten[v.Shortcode] = append(DataByShorten[v.Shortcode], &v)
+	if len(DataByShorten[v.Shortcode]) > 0 {
+
+		for _, val := range DataByShorten[v.Shortcode] {
+			val.Count = v.Count
+			val.LastSeenDate = v.LastSeenDate
+		}
+	}
 }
 
 func getDataByShorten(s string) (state bool, data DataURL) {
-	fmt.Println("s")
-	fmt.Println(s)
-	fmt.Println(DataByShorten)
-	fmt.Println(len(DataByShorten[s]))
+
 	if len(DataByShorten[s]) > 0 {
 
 		for _, val := range DataByShorten[s] {
